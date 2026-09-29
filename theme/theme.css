@@ -1,0 +1,250 @@
+/* Cybershuttle docs theme. Colour comes from three tokens: the colour mode sets the neutral --bg and --ink, the
+   audience sets --accent (blue for researchers, teal for resource providers), and everything else is mixed from them.
+   The desktop layout pins the navbar, the page panel and the section panel, and tops all three columns with one
+   control row (--panel-row) that holds the panel headers and, when a panel is collapsed, its tab. */
+
+:root {
+  --bg: #ffffff;
+  --ink: #0a0d12;
+  --on-accent: #ffffff;
+  --tint: 8%;
+  --accent: #1558d6;
+  --text-base: 1rem;
+  --text-small: 0.875rem;
+  --panel-row: 2.5rem;
+  --panel-head: calc(var(--panel-row) + 1rem);
+  --gutter: 1.75rem;
+  --toc: 16rem;
+  --motion: 0s;
+}
+[data-theme='dark'] { --bg: #0a0d12; --ink: #e9edf3; --on-accent: #0a0d12; --tint: 14%; }
+[data-audience='provider'] { --accent: #0f7f6f; }
+[data-theme='dark'][data-audience='researcher'] { --accent: #45c6e8; }
+[data-theme='dark'][data-audience='provider'] { --accent: #3dd6b5; }
+@media (prefers-reduced-motion: no-preference) { :root { --motion: 200ms ease; } html { scroll-behavior: smooth; } }
+
+:root {
+  --surface: color-mix(in srgb, var(--accent) calc(var(--tint) / 2), var(--bg));
+  --line: color-mix(in srgb, var(--accent) calc(var(--tint) * 1.5), color-mix(in srgb, var(--ink) 10%, var(--bg)));
+  --muted: color-mix(in srgb, var(--ink) 60%, var(--bg));
+  --ifm-color-primary: var(--accent);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--accent) 90%, var(--ink));
+  --ifm-color-primary-darker: color-mix(in srgb, var(--accent) 85%, var(--ink));
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--accent) 70%, var(--ink));
+  --ifm-color-primary-light: color-mix(in srgb, var(--accent) 90%, var(--bg));
+  --ifm-color-primary-lighter: color-mix(in srgb, var(--accent) 85%, var(--bg));
+  --ifm-color-primary-lightest: color-mix(in srgb, var(--accent) 70%, var(--bg));
+  --ifm-background-color: var(--bg);
+  --ifm-background-surface-color: var(--surface);
+  --ifm-font-color-base: color-mix(in srgb, var(--ink) 90%, var(--accent));
+  --ifm-heading-color: var(--ink);
+  --ifm-color-emphasis-100: var(--surface);
+  --ifm-navbar-background-color: color-mix(in srgb, var(--accent) var(--tint), var(--bg));
+  --ifm-navbar-shadow: 0 1px 0 var(--line);
+  --ifm-navbar-sidebar-width: min(83vw, 20rem);
+  --ifm-toc-border-color: var(--line);
+  --ifm-hr-border-color: var(--line);
+  --ifm-code-background: color-mix(in srgb, var(--accent) var(--tint), var(--bg));
+  --ifm-code-font-size: 0.875em;
+  --ifm-footer-background-color: var(--surface);
+  --ifm-footer-link-color: color-mix(in srgb, var(--ink) 75%, var(--bg));
+  --docusaurus-highlighted-code-line-bg: color-mix(in srgb, var(--accent) calc(var(--tint) * 1.5), transparent);
+  --ifm-font-family-base: 'Roboto Serif', Georgia, 'Times New Roman', serif;
+  --ifm-line-height-base: 1.6;
+  --ifm-font-weight-bold: 600;
+  --ifm-heading-font-weight: 600;
+  --doc-sidebar-hidden-width: 0px;
+  --ifm-table-head-background: transparent;
+  --ifm-table-stripe-background: transparent;
+  --ifm-table-border-width: 0;
+}
+
+/* Base. Colour changes from the colour mode or the audience fade instead of snapping; any element's own transition
+   rule overrides this one. */
+:where(*, *::before, *::after) { transition: background-color var(--motion), color var(--motion), border-color var(--motion), fill var(--motion), stroke var(--motion); }
+
+html { font-stretch: 80%; font-optical-sizing: auto; }
+html, body { overscroll-behavior: none; }
+.navbar__link, .menu__link, .table-of-contents, .pagination-nav__label, .theme-edit-this-page, .footer__link-item, .markdown table { font-size: var(--text-base); }
+.breadcrumbs__link, .pagination-nav__sublabel, .footer__copyright { font-size: var(--text-small); }
+.navbar__link, .menu__link, .table-of-contents__link, .breadcrumbs__link { transition: color var(--motion), background-color var(--motion), border-color var(--motion); }
+.navbar__title { font-weight: 700; color: var(--ink); }
+.menu__link--active:not(.menu__link--sublist) { background: color-mix(in srgb, var(--accent) calc(var(--tint) * 1.25), transparent); font-weight: 600; }
+/* Tables: horizontal rules only, a ruled header, compact top-aligned cells */
+.markdown table { display: table; width: 100%; }
+.markdown :is(th, td) { padding: 0.45rem 0.75rem 0.45rem 0; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; overflow-wrap: break-word; }
+@media (min-width: 997px) { .markdown :is(th, td).nowrap { white-space: nowrap; } }
+.markdown td code.long { overflow-wrap: anywhere; }
+.markdown :is(th, td):first-child { padding-left: 0.25rem; }
+.markdown th { border-bottom: 2px solid color-mix(in srgb, var(--ink) 25%, var(--bg)); color: var(--ink); }
+.markdown tbody tr:hover { background: var(--surface); }
+/* Screenshots: framed, at their CSS size, in the variant matching the colour mode */
+.markdown img.screenshot { display: block; max-width: 100%; height: auto; margin: 0.25rem 0; border: 1px solid var(--line); border-radius: 6px; }
+[data-theme='dark'] .markdown img.screenshot--light, [data-theme='light'] .markdown img.screenshot--dark { display: none; }
+.status {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  line-height: 1.6rem;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--status, var(--accent)) calc(var(--tint) * 1.75), var(--bg));
+  color: color-mix(in srgb, var(--status, var(--accent)) 70%, var(--ink));
+}
+.status--available { --status: #1a9e5c; }
+.status--development { --status: #c98a00; }
+
+/* Audience and power-user content (remark.js marks blocks; their headings carry r-, p-, a- ids) */
+[data-audience='provider'] :is(.audience--researcher, .nav--researcher, .table-of-contents a[href^='#r-']),
+[data-audience='researcher'] :is(.audience--provider, .nav--provider, .table-of-contents a[href^='#p-']),
+[data-audience='researcher'][data-advanced='off'] :is(.advanced, .sidebar--advanced, tr:has(.advanced), .table-of-contents a:is([href^='#a-'], [href^='#r-a-'])) { display: none; }
+.audience, .advanced { animation: fade-in var(--motion); }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* Navbar */
+.navbar { position: fixed; inset: 0 0 auto; }
+.main-wrapper { padding-top: var(--ifm-navbar-height); }
+.navbar__item.nav--github { display: inline-block; }
+.audience-toggle { display: inline-flex; margin: 0 0.5rem; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.audience-toggle button {
+  min-width: 5.75rem;
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ifm-font-color-base);
+  font: inherit;
+  font-size: var(--text-small);
+  cursor: pointer;
+}
+[data-audience='researcher'] .audience-toggle [data-value='researcher'],
+[data-audience='provider'] .audience-toggle [data-value='provider'] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+@media (max-width: 1250px) {
+  :root { --ifm-navbar-item-padding-horizontal: 0.5rem; }
+  .navbar__title { display: none; }
+  .audience-toggle button { padding: 0.25rem 0.5rem; }
+}
+@media (max-width: 996px) { .navbar__item.nav--github { padding: 0 0.35rem; font-size: var(--text-small); } }
+@media (max-width: 600px) { .audience-toggle button { min-width: 0; padding: 0.2rem 0.5rem; } }
+@media (max-width: 430px) {
+  .navbar { padding: 0 0.5rem; }
+  .navbar__brand { display: none; }
+  .audience-toggle button { padding: 0.15rem 0.35rem; }
+}
+
+/* Breadcrumbs: the tab home is an outlined pill aligned with the text crumbs */
+.theme-doc-breadcrumbs .breadcrumbs, .theme-doc-breadcrumbs .breadcrumbs__item { display: flex; flex-wrap: wrap; align-items: center; }
+.tab-home { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid var(--line); border-radius: 999px; }
+.tab-home:hover { border-color: var(--accent); color: var(--accent); }
+.tab-home__icon { width: 1rem; height: 1rem; }
+
+/* Panel buttons: the header row of an open panel and the tab of a collapsed one share the icon and label position */
+.panel-button {
+  position: absolute;
+  inset: auto 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  height: var(--panel-head);
+  padding: calc((var(--panel-head) + 6px - 20px) / 2) 0 0 1.25rem;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-small);
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.panel-button svg { flex: none; color: var(--accent); }
+.panel-button__label { font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.panel-button__detail { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ifm-font-color-base); }
+.panel-button:hover { background: color-mix(in srgb, var(--accent) calc(var(--tint) * 0.75), transparent); color: var(--accent); }
+.panel-button:not(.panel-button--collapsed) svg { margin-top: 3px; }
+.panel-button--pages { top: var(--ifm-navbar-height); }
+.panel-button--sections { top: 0; }
+.panel-button--collapsed {
+  --tab-top: calc((var(--panel-head) + 6px) / 2 - 14px);
+  right: auto;
+  align-items: center;
+  height: 28px;
+  padding: 0 0.75rem 0 1.25rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  animation: fade-in var(--motion);
+}
+.panel-button--pages.panel-button--collapsed { top: calc(var(--ifm-navbar-height) + var(--tab-top)); max-width: calc(var(--doc-sidebar-width) - 1rem); border-left: 0; border-radius: 0 999px 999px 0; }
+.panel-button--sections.panel-button--collapsed { top: var(--tab-top); left: calc(-1 * var(--toc) + 1.25rem - 0.5rem); width: calc(var(--toc) - 1.25rem + 0.5rem); padding-left: 0.5rem; border-right: 0; border-radius: 999px 0 0 999px; }
+
+/* Layout: pinned page panel and section panel; the article and footer share one width between them */
+.toc-panel { display: none; }
+.footer { padding: 1.25rem var(--ifm-footer-padding-horizontal); }
+.footer__link-item svg { display: none; }
+.footer__links { margin-bottom: 0.5rem; }
+.footer__copyright { line-height: 1.45; color: var(--muted); }
+.footer__copyright a { color: inherit; text-decoration: underline; }
+@media (min-width: 997px) {
+  :root { --content-max: var(--ifm-container-width-xl); }
+  :root:has(aside[class*='docSidebarContainerHidden']) { --content-max: calc(var(--ifm-container-width) + var(--doc-sidebar-width)); }
+  aside.theme-doc-sidebar-container {
+    position: fixed;
+    inset: 0 auto 0 0;
+    margin-top: 0;
+    z-index: calc(var(--ifm-z-index-fixed) - 1);
+    clip-path: none;
+    background: var(--bg);
+  }
+  aside.theme-doc-sidebar-container > div { position: relative; height: 100%; }
+  aside.theme-doc-sidebar-container > div > div { transition: opacity var(--motion), visibility var(--motion); }
+  aside[class*='docSidebarContainerHidden'] { border-right: 0; cursor: default; }
+  aside nav.menu { padding-top: var(--panel-head); }
+  .docs-doc-page :is(main[class*='docMainContainer'], .footer) { margin: 0 0 0 var(--doc-sidebar-width); transition: margin var(--motion); }
+  .docs-doc-page:has(.toc-panel) :is(main[class*='docMainContainer'], .footer) { margin-right: var(--toc); }
+  .docs-doc-page[data-toc='closed'] :is(main[class*='docMainContainer'], .footer) { margin-right: 0; }
+  .docs-doc-page:has(aside[class*='docSidebarContainerHidden']) :is(main[class*='docMainContainer'], .footer) { margin-left: 0; }
+  .docs-doc-page main[class*='docMainContainer'] { max-width: none; min-width: 0; }
+  .docs-doc-page main[class*='docMainContainer'] > .container { margin-top: var(--panel-row); padding-inline: var(--gutter); }
+  /* The classic theme caps the article column with a layered !important max-width; min-width overrides it. */
+  .row > .col[class*='docItemCol'] { flex: 1 1 0; min-width: 100%; }
+  .row > .col.col--3:has(.toc-panel) { flex: 0 0 0; max-width: 0; padding: 0; }
+  .docs-doc-page .footer { padding: 0 var(--gutter) 1rem; background: transparent; }
+  .docs-doc-page .footer > .container { max-width: calc(var(--content-max) - 2 * var(--gutter)); margin: 0 auto; padding: 1.25rem var(--ifm-spacing-horizontal); border-radius: 8px; background: var(--surface); }
+  .toc-panel {
+    display: block;
+    position: fixed;
+    inset: var(--ifm-navbar-height) 0 0 auto;
+    width: var(--toc);
+    padding: calc(var(--panel-row) + 8px) 0.75rem 1rem;
+    border-left: 1px solid var(--line);
+    background: var(--bg);
+    transition: width var(--motion), padding var(--motion);
+  }
+  [data-toc='closed'] .toc-panel { width: 0; padding: 0; border-left: 0; }
+  .toc-panel .theme-doc-toc-desktop { position: static; width: calc(var(--toc) - 1.5rem); max-height: 100%; overflow-x: hidden; transition: opacity var(--motion), visibility var(--motion); }
+  [data-toc='closed'] .toc-panel .theme-doc-toc-desktop { opacity: 0; visibility: hidden; }
+  /* Section rows share the page list's grid (20px line, 6px padding, 4px gap), so the two panels align row to row. */
+  .toc-panel .table-of-contents__left-border { border-left: 0; }
+  .toc-panel .table-of-contents li { margin: 4px 0 0; }
+  .toc-panel .table-of-contents > li:first-child { margin-top: 0; }
+  .toc-panel .table-of-contents__link { display: block; padding: 6px 0; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Power user row at the foot of the page panel */
+.power-user { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; border-top: 1px solid var(--line); font-size: var(--text-small); font-weight: 500; }
+.power-user button { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+.power-user button:disabled { opacity: 0.5; cursor: not-allowed; }
+.power-user :is([aria-checked='false'] > svg:first-child, [aria-checked='true'] > svg:last-child) { color: var(--accent); }
+.power-user__track { position: relative; width: 2rem; height: 1.1rem; border-radius: 999px; background: var(--ifm-color-emphasis-300); transition: background var(--motion); }
+.power-user__track::after { content: ''; position: absolute; top: 2px; left: 2px; width: calc(1.1rem - 4px); height: calc(1.1rem - 4px); border-radius: 50%; background: var(--bg); transition: transform var(--motion); }
+[aria-checked='true'] > .power-user__track { background: var(--accent); }
+[aria-checked='true'] > .power-user__track::after { transform: translateX(0.9rem); }
+
+/* Mermaid diagrams take their colours from the same tokens */
+.docusaurus-mermaid-container svg :is(.node rect, .node polygon, .node circle, .node path) { fill: color-mix(in srgb, var(--accent) calc(var(--tint) * 1.25), var(--bg)) !important; stroke: var(--accent) !important; }
+.docusaurus-mermaid-container svg :is(.cluster rect, .note) { fill: var(--surface) !important; stroke: var(--line) !important; }
+.docusaurus-mermaid-container svg :is(.flowchart-link, .edgePath path, .messageLine0, .messageLine1, .actor-line, .transition) { stroke: var(--muted) !important; }
+.docusaurus-mermaid-container svg :is(marker path, .arrowheadPath) { fill: var(--muted) !important; stroke: none !important; }
+.docusaurus-mermaid-container svg :is(text, .nodeLabel, .cluster-label, .label, .messageText, .noteText) { color: var(--ink) !important; fill: var(--ink) !important; }
+.docusaurus-mermaid-container :is(.edgeLabel, .edgeLabel *, .labelBkg) { background-color: var(--bg) !important; color: var(--ink) !important; }
