@@ -1,0 +1,942 @@
+---
+title: VS Code tutorial
+description: Run VS Code on a compute node of Nexus, TTU HPCC, NCSA Delta, PSC Bridges-2 or SDSC Expanse, or on a CloudBank VM, with CS Bridge.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# VS Code tutorial
+
+This tutorial installs CS Bridge, opens VS Code on remote hardware, and stops it again. The hardware is a compute
+node of an HPC cluster (Nexus, TTU HPCC, NCSA Delta, PSC Bridges-2 or SDSC Expanse) or a cloud VM on CloudBank
+(AWS). Choose yours in any tab; the tabs of every step follow.
+
+On a cluster, CS Bridge submits a Slurm job that runs on a compute node, as [How it works](./index.md#how-it-works)
+describes. On CloudBank, it launches an EC2 instance in your AWS account instead. Names such as `jdoe` and `abc123`
+are examples; use your own.
+
+## Before you start
+
+You need VS Code 1.101 or newer and an OpenSSH client with an existing `~/.ssh` folder. On an HPC cluster, you also
+need a free Microsoft account for the Dev Tunnel, and usually a Slurm account: the allocation your jobs are charged
+to.
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+| Item | Nexus |
+|---|---|
+| Account | A Nexus account, requested at [portal.nexus.gatech.edu](https://portal.nexus.gatech.edu), where you sign in with your institution through CILogon |
+| Login | `ssh <username>@login-nexus-1.pace.gatech.edu` |
+| Authentication | CILogon sign-in in a browser; SSH shows the link and a code |
+| Slurm account | Your allocation, such as `abc123`; `sacctmgr show assoc user=$USER format=account` lists yours |
+
+`cpu-int` allows CPU jobs up to 16 hours; `gpu-rtxpro` and `gpu-b200` allow GPU jobs up to 48 hours. A
+`gpu-b200` job takes a whole node.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+| Item | TTU HPCC |
+|---|---|
+| Account | An HPCC account; you log in with your eRaider ID |
+| Login | `ssh <eraider>@login.hpcc.ttu.edu` |
+| Authentication | eRaider password |
+| Network | Campus network, or the GlobalProtect VPN off campus |
+| Slurm account | None to choose |
+
+The [login-node policy](https://www.depts.ttu.edu/hpcc/policies/login-node-policy/index.php)
+limits each user to 2 cores and 12 GB on a login node and prohibits AI agents and compute codes there. For VS
+Code it names OnDemand Code Server or CS Bridge, which runs the editor on a compute node. TTU also publishes a
+[CS Bridge guide](https://www.depts.ttu.edu/hpcc/userguides/Visual_Studio_Code_CS_Bridge_Extension/Visual_Studio_Code_CS_Bridge_main.php).
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+| Item | NCSA Delta |
+|---|---|
+| Account | An NCSA username; ACCESS users find it under **Resource Provider Site Usernames** in their ACCESS profile |
+| Login | `ssh <username>@login.delta.ncsa.illinois.edu` |
+| Authentication | NCSA password, then Duo. SSH keys are disabled |
+| Network | No VPN |
+| Slurm account | `accounts` lists yours, such as `abcd-delta-cpu`; GPU jobs need the `-gpu` one |
+
+The `-interactive` partitions start soonest, allow at most 1 hour and charge double. See the
+[Delta user guide](https://docs.ncsa.illinois.edu/systems/delta/en/latest/user_guide/running_jobs.html).
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+:::warning[Bridges-2 is offline]
+PSC is moving Bridges-2 to a new datacenter. The outage began 2026-11-09 and Bridges-2 is expected back in
+December 2026. Check the [migration page](https://www.psc.edu/b2-migration-2026/) before you start.
+:::
+
+| Item | PSC Bridges-2 |
+|---|---|
+| Account | A PSC username with a PSC password set |
+| Login | `ssh <username>@bridges2.psc.edu` |
+| Authentication | PSC password, or an SSH key registered at grants.psc.edu |
+| Network | No VPN |
+| Slurm account | `projects` lists your charge IDs, such as `abc000000p` |
+
+PSC asks that VS Code never run on a login node; CS Bridge runs it on a compute node. See the
+[Bridges-2 user guide](https://www.psc.edu/resources/bridges-2/user-guide/).
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+| Item | SDSC Expanse |
+|---|---|
+| Account | An Expanse username; the password is your ACCESS portal password |
+| Login | `ssh <username>@login.expanse.sdsc.edu` |
+| Authentication | Password or SSH key, then a code from an authenticator app |
+| Network | No VPN |
+| Slurm account | Required; `expanse-client user -r expanse` lists yours, such as `abc123` |
+
+Enroll the authenticator at passive.sdsc.edu; pairing takes up to 15 minutes to apply. Expanse may block more than 10
+connections a minute. See the [Expanse user guide](https://www.sdsc.edu/systems/expanse/user_guide.html).
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+| Item | CloudBank (AWS) |
+|---|---|
+| Account | A CloudBank-funded AWS account, from an ACCESS or NAIRR Pilot allocation |
+| Credentials | An AWS access key ID and secret access key |
+| Network | Outbound SSH (port 22) to the VM |
+
+:::note[Access keys]
+CloudBank does not enable static access keys by default. Ask [CloudBank support](mailto:help@cloudbank.org) for
+the permission, then create a key in the AWS console under **IAM → Users → your user → Security credentials →
+Create access key**. NAIRR accounts may launch only the instance types in their submitted estimate.
+:::
+
+A VM has no walltime; it runs and bills until you stop it. No Microsoft account is needed.
+
+</TabItem>
+
+</Tabs>
+
+## 1. Install the extensions
+
+Install Microsoft's **Remote-SSH**, then **CS Bridge**, from the Extensions view.
+
+![The Extensions view showing Remote - SSH by Microsoft with its Install button](/img/screenshots/vscode-tutorial/common-install-remote-ssh-light.png)
+![The Extensions view showing Remote - SSH by Microsoft with its Install button](/img/screenshots/vscode-tutorial/common-install-remote-ssh-dark.png)
+
+![The Extensions view showing CS Bridge with its Install button](/img/screenshots/vscode-tutorial/common-install-cs-bridge-light.png)
+![The Extensions view showing CS Bridge with its Install button](/img/screenshots/vscode-tutorial/common-install-cs-bridge-dark.png)
+
+**Result:** a rocket icon in the activity bar opens CS Bridge, with **Sessions**, **Run History** and **Compute
+Hosts** views.
+
+![The CS Bridge side bar, Not Signed In, with empty Sessions, Run History and Compute Hosts views](/img/screenshots/vscode-tutorial/common-panel-signed-out-light.png)
+![The CS Bridge side bar, Not Signed In, with empty Sessions, Run History and Compute Hosts views](/img/screenshots/vscode-tutorial/common-panel-signed-out-dark.png)
+
+## 2. Sign in
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **+** in the **Sessions** view and choose **Sign In to Microsoft DevTunnel**. Finish the sign-in in your
+browser. CS Bridge uses the account to create, reach and delete each session's Dev Tunnel.
+
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-light.png)
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-dark.png)
+
+**Result:** the **Sessions** header shows your Microsoft account instead of `Not Signed In`.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **+** in the **Sessions** view and choose **Sign In to Microsoft DevTunnel**. Finish the sign-in in your
+browser. At TTU, your Texas Tech account works. CS Bridge uses the account to create, reach and delete each session's Dev Tunnel.
+
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-light.png)
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-dark.png)
+
+**Result:** the **Sessions** header shows your Microsoft account instead of `Not Signed In`.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **+** in the **Sessions** view and choose **Sign In to Microsoft DevTunnel**. Finish the sign-in in your
+browser. CS Bridge uses the account to create, reach and delete each session's Dev Tunnel.
+
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-light.png)
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-dark.png)
+
+**Result:** the **Sessions** header shows your Microsoft account instead of `Not Signed In`.
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **+** in the **Sessions** view and choose **Sign In to Microsoft DevTunnel**. Finish the sign-in in your
+browser. CS Bridge uses the account to create, reach and delete each session's Dev Tunnel.
+
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-light.png)
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-dark.png)
+
+**Result:** the **Sessions** header shows your Microsoft account instead of `Not Signed In`.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **+** in the **Sessions** view and choose **Sign In to Microsoft DevTunnel**. Finish the sign-in in your
+browser. CS Bridge uses the account to create, reach and delete each session's Dev Tunnel.
+
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-light.png)
+![The CS Bridge menu with Create New Session, Add Compute Host and Sign In to Microsoft DevTunnel](/img/screenshots/vscode-tutorial/common-menu-signed-out-dark.png)
+
+**Result:** the **Sessions** header shows your Microsoft account instead of `Not Signed In`.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Cloud VMs are experimental. To enable them, open **Settings**, search for `csbridge.experimentalFeatures`, and
+tick it.
+
+![The Settings editor with CS Bridge: Experimental Features ticked](/img/screenshots/vscode-tutorial/cloudbank-experimental-setting-light.png)
+![The Settings editor with CS Bridge: Experimental Features ticked](/img/screenshots/vscode-tutorial/cloudbank-experimental-setting-dark.png)
+
+Click **+** in the **Sessions** view and choose **Sign In to AWS**. Paste your access key ID, then your secret
+access key. CS Bridge keeps them in VS Code's secret storage.
+
+![Signing in to AWS: choosing Sign In to AWS, then entering the access key ID and secret](/img/screenshots/vscode-tutorial/cloudbank-aws-sign-in-light.gif)
+![Signing in to AWS: choosing Sign In to AWS, then entering the access key ID and secret](/img/screenshots/vscode-tutorial/cloudbank-aws-sign-in-dark.gif)
+
+**Result:** the menu offers **Create Cloud VM**.
+
+![The CS Bridge menu after AWS sign-in, offering Create Cloud VM](/img/screenshots/vscode-tutorial/cloudbank-aws-signed-in-light.png)
+![The CS Bridge menu after AWS sign-in, offering Create Cloud VM](/img/screenshots/vscode-tutorial/cloudbank-aws-signed-in-dark.png)
+
+</TabItem>
+
+</Tabs>
+
+## 3. Add the cluster
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **+** → **Add Compute Host**, paste the command you use to log in, and press Enter:
+
+```bash
+ssh jdoe@login-nexus-1.pace.gatech.edu
+```
+
+Replace `jdoe` with your Nexus username. Accept the proposed alias or type a shorter one, here `nexus`.
+
+![Adding Nexus: the ssh command is pasted, the alias nexus accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/nexus-add-host-light.gif)
+![Adding Nexus: the ssh command is pasted, the alias nexus accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/nexus-add-host-dark.gif)
+
+**Result:** `nexus` appears under **Compute Hosts**.
+
+CS Bridge adds the host to `~/.ssh/config`, after an `Include` line for its session entries:
+
+```text
+Include …/globalStorage/cybershuttle.csbridge/ssh_config
+
+Host nexus
+  HostName login-nexus-1.pace.gatech.edu
+  User jdoe
+```
+
+To check it, run `ssh nexus hostname` in a terminal and answer the login prompts. It prints the login
+node's name:
+
+![A terminal running ssh nexus hostname, answering the login prompts, and printing login-nexus-1](/img/screenshots/vscode-tutorial/nexus-ssh-check-light.png)
+![A terminal running ssh nexus hostname, answering the login prompts, and printing login-nexus-1](/img/screenshots/vscode-tutorial/nexus-ssh-check-dark.png)
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **+** → **Add Compute Host**, paste the command you use to log in, and press Enter:
+
+```bash
+ssh jdoe@login.hpcc.ttu.edu
+```
+
+Replace `jdoe` with your eRaider ID. Accept the proposed alias or type a shorter one, here `hpcc`.
+
+![Adding TTU HPCC: the ssh command is pasted, the alias hpcc accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/ttu-add-host-light.gif)
+![Adding TTU HPCC: the ssh command is pasted, the alias hpcc accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/ttu-add-host-dark.gif)
+
+**Result:** `hpcc` appears under **Compute Hosts**.
+
+CS Bridge adds the host to `~/.ssh/config`, after an `Include` line for its session entries:
+
+```text
+Include …/globalStorage/cybershuttle.csbridge/ssh_config
+
+Host hpcc
+  HostName login.hpcc.ttu.edu
+  User jdoe
+```
+
+To check it, run `ssh hpcc hostname` in a terminal and answer the login prompts. It prints the login
+node's name:
+
+![A terminal running ssh hpcc hostname, answering the login prompts, and printing login-20-25](/img/screenshots/vscode-tutorial/ttu-ssh-check-light.png)
+![A terminal running ssh hpcc hostname, answering the login prompts, and printing login-20-25](/img/screenshots/vscode-tutorial/ttu-ssh-check-dark.png)
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **+** → **Add Compute Host**, paste the command you use to log in, and press Enter:
+
+```bash
+ssh jdoe@login.delta.ncsa.illinois.edu
+```
+
+Replace `jdoe` with your NCSA username. Accept the proposed alias or type a shorter one, here `delta`.
+
+![Adding NCSA Delta: the ssh command is pasted, the alias delta accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/delta-add-host-light.gif)
+![Adding NCSA Delta: the ssh command is pasted, the alias delta accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/delta-add-host-dark.gif)
+
+**Result:** `delta` appears under **Compute Hosts**.
+
+CS Bridge adds the host to `~/.ssh/config`, after an `Include` line for its session entries:
+
+```text
+Include …/globalStorage/cybershuttle.csbridge/ssh_config
+
+Host delta
+  HostName login.delta.ncsa.illinois.edu
+  User jdoe
+```
+
+To check it, run `ssh delta hostname` in a terminal and answer the login prompts. It prints the login
+node's name:
+
+![A terminal running ssh delta hostname, answering the login prompts, and printing dt-login03](/img/screenshots/vscode-tutorial/delta-ssh-check-light.png)
+![A terminal running ssh delta hostname, answering the login prompts, and printing dt-login03](/img/screenshots/vscode-tutorial/delta-ssh-check-dark.png)
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **+** → **Add Compute Host**, paste the command you use to log in, and press Enter:
+
+```bash
+ssh jdoe@bridges2.psc.edu
+```
+
+Replace `jdoe` with your PSC username. Accept the proposed alias or type a shorter one, here `bridges2`.
+
+![Adding PSC Bridges-2: the ssh command is pasted, the alias bridges2 accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/bridges2-add-host-light.gif)
+![Adding PSC Bridges-2: the ssh command is pasted, the alias bridges2 accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/bridges2-add-host-dark.gif)
+
+**Result:** `bridges2` appears under **Compute Hosts**.
+
+CS Bridge adds the host to `~/.ssh/config`, after an `Include` line for its session entries:
+
+```text
+Include …/globalStorage/cybershuttle.csbridge/ssh_config
+
+Host bridges2
+  HostName bridges2.psc.edu
+  User jdoe
+```
+
+To check it, run `ssh bridges2 hostname` in a terminal and answer the login prompts. It prints the login
+node's name:
+
+![A terminal running ssh bridges2 hostname, answering the login prompts, and printing bridges2-login013](/img/screenshots/vscode-tutorial/bridges2-ssh-check-light.png)
+![A terminal running ssh bridges2 hostname, answering the login prompts, and printing bridges2-login013](/img/screenshots/vscode-tutorial/bridges2-ssh-check-dark.png)
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **+** → **Add Compute Host**, paste the command you use to log in, and press Enter:
+
+```bash
+ssh jdoe@login.expanse.sdsc.edu
+```
+
+Replace `jdoe` with your Expanse username. Accept the proposed alias or type a shorter one, here `expanse`.
+
+![Adding SDSC Expanse: the ssh command is pasted, the alias expanse accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/expanse-add-host-light.gif)
+![Adding SDSC Expanse: the ssh command is pasted, the alias expanse accepted, and the host appears under Compute Hosts](/img/screenshots/vscode-tutorial/expanse-add-host-dark.gif)
+
+**Result:** `expanse` appears under **Compute Hosts**.
+
+CS Bridge adds the host to `~/.ssh/config`, after an `Include` line for its session entries:
+
+```text
+Include …/globalStorage/cybershuttle.csbridge/ssh_config
+
+Host expanse
+  HostName login.expanse.sdsc.edu
+  User jdoe
+```
+
+To check it, run `ssh expanse hostname` in a terminal and answer the login prompts. It prints the login
+node's name:
+
+![A terminal running ssh expanse hostname, answering the login prompts, and printing login01](/img/screenshots/vscode-tutorial/expanse-ssh-check-light.png)
+![A terminal running ssh expanse hostname, answering the login prompts, and printing login01](/img/screenshots/vscode-tutorial/expanse-ssh-check-dark.png)
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Skip this step. CS Bridge creates the VM's SSH entry and key itself when it launches the VM.
+
+</TabItem>
+
+</Tabs>
+
+## 4. Create a session
+
+A **session** is a saved set of resources: on a cluster, a Slurm job request; on CloudBank, a VM. Creating one
+starts nothing; each **Start** submits a new job or starts the VM.
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **+** → **Create New Session** and pick `nexus`.
+
+CS Bridge logs in to read your Slurm accounts and the cluster's partitions; the card shows
+`Fetching runtime details…`. Nexus shows a CILogon link, a code and a QR code in an **SSH Authentication** tab. Open the link or scan
+the code, sign in with your institution, check that the page shows the same code, then press Enter in the tab:
+
+![The SSH Authentication tab showing the CILogon sign-in link, the code and a QR code for Nexus](/img/screenshots/vscode-tutorial/nexus-auth-device-light.png)
+![The SSH Authentication tab showing the CILogon sign-in link, the code and a QR code for Nexus](/img/screenshots/vscode-tutorial/nexus-auth-device-dark.png)
+
+Later steps reuse this login. In the form, keep the **CPU** tab, choose the Slurm account (`abc123`) and partition (`cpu-int`), and set 2 CPUs and 4 GB. Click
+**Add**; CS Bridge checks the request with `sbatch --test-only` before saving it.
+
+![Creating a Nexus session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/nexus-create-session-light.gif)
+![Creating a Nexus session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/nexus-create-session-dark.gif)
+
+**Result:** a session card for `nexus` with a **Start** button. No job runs yet.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **+** → **Create New Session** and pick `hpcc`.
+
+CS Bridge logs in to read your Slurm accounts and the cluster's partitions; the card shows
+`Fetching runtime details…`. TTU asks for your eRaider password in an **SSH Authentication** tab. Type it and press Enter:
+
+![The SSH Authentication tab asking for the password of jdoe@login.hpcc.ttu.edu](/img/screenshots/vscode-tutorial/ttu-auth-password-light.png)
+![The SSH Authentication tab asking for the password of jdoe@login.hpcc.ttu.edu](/img/screenshots/vscode-tutorial/ttu-auth-password-dark.png)
+
+Later steps reuse this login. In the form, keep the **CPU** tab, choose the partition (`nocona`); leave the Slurm account at `(no Slurm account)`, and set 2 CPUs and 4 GB. Click
+**Add**; CS Bridge checks the request with `sbatch --test-only` before saving it.
+
+![Creating a TTU HPCC session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/ttu-create-session-light.gif)
+![Creating a TTU HPCC session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/ttu-create-session-dark.gif)
+
+**Result:** a session card for `hpcc` with a **Start** button. No job runs yet.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **+** → **Create New Session** and pick `delta`.
+
+CS Bridge logs in to read your Slurm accounts and the cluster's partitions; the card shows
+`Fetching runtime details…`. Delta asks for your NCSA password in an **SSH Authentication** tab, then for Duo. Type the password and
+press Enter, then type `1` for a push or enter a passcode:
+
+![The SSH Authentication tab asking for the password of jdoe@login.delta.ncsa.illinois.edu](/img/screenshots/vscode-tutorial/delta-auth-password-light.png)
+![The SSH Authentication tab asking for the password of jdoe@login.delta.ncsa.illinois.edu](/img/screenshots/vscode-tutorial/delta-auth-password-dark.png)
+
+![The SSH Authentication tab showing the Duo prompt for jdoe on login.delta.ncsa.illinois.edu](/img/screenshots/vscode-tutorial/delta-auth-mfa-light.png)
+![The SSH Authentication tab showing the Duo prompt for jdoe on login.delta.ncsa.illinois.edu](/img/screenshots/vscode-tutorial/delta-auth-mfa-dark.png)
+
+Later steps reuse this login. In the form, keep the **CPU** tab, choose the Slurm account (`abcd-delta-cpu`) and partition (`cpu-interactive`), and set 2 CPUs and 4 GB. Click
+**Add**; CS Bridge checks the request with `sbatch --test-only` before saving it.
+
+![Creating a NCSA Delta session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/delta-create-session-light.gif)
+![Creating a NCSA Delta session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/delta-create-session-dark.gif)
+
+**Result:** a session card for `delta` with a **Start** button. No job runs yet.
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **+** → **Create New Session** and pick `bridges2`.
+
+CS Bridge logs in to read your Slurm accounts and the cluster's partitions; the card shows
+`Fetching runtime details…`. Bridges-2 asks for your PSC password in an **SSH Authentication** tab unless you use a registered SSH key.
+Type it and press Enter:
+
+![The SSH Authentication tab asking for the password of jdoe@bridges2.psc.edu](/img/screenshots/vscode-tutorial/bridges2-auth-password-light.png)
+![The SSH Authentication tab asking for the password of jdoe@bridges2.psc.edu](/img/screenshots/vscode-tutorial/bridges2-auth-password-dark.png)
+
+Later steps reuse this login. In the form, keep the **CPU** tab, choose the Slurm account (`abc000000p`) and partition (`RM-shared`), and set 2 CPUs and 4 GB. Click
+**Add**; CS Bridge checks the request with `sbatch --test-only` before saving it.
+
+![Creating a PSC Bridges-2 session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/bridges2-create-session-light.gif)
+![Creating a PSC Bridges-2 session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/bridges2-create-session-dark.gif)
+
+**Result:** a session card for `bridges2` with a **Start** button. No job runs yet.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **+** → **Create New Session** and pick `expanse`.
+
+CS Bridge logs in to read your Slurm accounts and the cluster's partitions; the card shows
+`Fetching runtime details…`. Expanse asks for your password in an **SSH Authentication** tab, then for your authenticator code. Type
+each and press Enter:
+
+![The SSH Authentication tab asking for the password of jdoe@login.expanse.sdsc.edu](/img/screenshots/vscode-tutorial/expanse-auth-password-light.png)
+![The SSH Authentication tab asking for the password of jdoe@login.expanse.sdsc.edu](/img/screenshots/vscode-tutorial/expanse-auth-password-dark.png)
+
+Later steps reuse this login. In the form, keep the **CPU** tab, choose the Slurm account (`abc123`) and partition (`shared`), and set 2 CPUs and 4 GB. Click
+**Add**; CS Bridge checks the request with `sbatch --test-only` before saving it.
+
+![Creating a SDSC Expanse session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/expanse-create-session-light.gif)
+![Creating a SDSC Expanse session: picking the host, answering the login prompts, filling the form and clicking Add](/img/screenshots/vscode-tutorial/expanse-create-session-dark.gif)
+
+**Result:** a session card for `expanse` with a **Start** button. No job runs yet.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Click **+** → **Create Cloud VM**, then choose a region, an instance type (t3 or m5) and an image (Amazon Linux 2023
+or Ubuntu 24.04).
+
+The first launch in a region creates a default VPC if there is none, a security group `CS-Bridge SSH Access` that
+opens port 22, and a key pair for this computer. They stay in the account.
+
+**Result:** a VM session card with **Start**. No instance runs yet.
+
+![A not-started cloud VM session card for aws-us-east-1](/img/screenshots/vscode-tutorial/cloudbank-not-started-light.png)
+![A not-started cloud VM session card for aws-us-east-1](/img/screenshots/vscode-tutorial/cloudbank-not-started-dark.png)
+
+</TabItem>
+
+</Tabs>
+
+## 5. Start the session
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **Start** and choose a walltime, the job's time limit. It cannot be extended; 30 minutes suffices here.
+CS Bridge then shows the job script it will submit. Click **Submit Job**.
+
+The card reads `Queued` until Slurm starts the job, then `Starting Linkspan…`, then the time left. From
+`Starting Linkspan…` on, the job runs and is charged to your allocation.
+
+![Starting the nexus session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/nexus-start-light.gif)
+![Starting the nexus session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/nexus-start-dark.gif)
+
+**Result:** the card shows live CPU and memory use, the time left, and **Connect**.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **Start** and choose a walltime, the job's time limit. It cannot be extended; 30 minutes suffices here.
+CS Bridge then shows the job script it will submit. Click **Submit Job**.
+
+The card reads `Queued` until Slurm starts the job, then `Starting Linkspan…`, then the time left. From
+`Starting Linkspan…` on, the job runs and is charged to your allocation.
+
+![Starting the hpcc session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/ttu-start-light.gif)
+![Starting the hpcc session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/ttu-start-dark.gif)
+
+**Result:** the card shows live CPU and memory use, the time left, and **Connect**.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **Start** and choose a walltime, the job's time limit. It cannot be extended; 30 minutes suffices here.
+CS Bridge then shows the job script it will submit. Click **Submit Job**.
+
+The card reads `Queued` until Slurm starts the job, then `Starting Linkspan…`, then the time left. From
+`Starting Linkspan…` on, the job runs and is charged to your allocation.
+
+![Starting the delta session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/delta-start-light.gif)
+![Starting the delta session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/delta-start-dark.gif)
+
+**Result:** the card shows live CPU and memory use, the time left, and **Connect**.
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **Start** and choose a walltime, the job's time limit. It cannot be extended; 30 minutes suffices here.
+CS Bridge then shows the job script it will submit. Click **Submit Job**.
+
+The card reads `Queued` until Slurm starts the job, then `Starting Linkspan…`, then the time left. From
+`Starting Linkspan…` on, the job runs and is charged to your allocation.
+
+![Starting the bridges2 session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/bridges2-start-light.gif)
+![Starting the bridges2 session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/bridges2-start-dark.gif)
+
+**Result:** the card shows live CPU and memory use, the time left, and **Connect**.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **Start** and choose a walltime, the job's time limit. It cannot be extended; 30 minutes suffices here.
+CS Bridge then shows the job script it will submit. Click **Submit Job**.
+
+The card reads `Queued` until Slurm starts the job, then `Starting Linkspan…`, then the time left. From
+`Starting Linkspan…` on, the job runs and is charged to your allocation.
+
+![Starting the expanse session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/expanse-start-light.gif)
+![Starting the expanse session: walltime, job script, Submit Job, Queued, then running with time left](/img/screenshots/vscode-tutorial/expanse-start-dark.gif)
+
+**Result:** the card shows live CPU and memory use, the time left, and **Connect**.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Click **Start**. A VM has no walltime or job script; the card reads `Launching` until the instance runs, and from
+then on it bills your CloudBank allocation.
+
+![Creating and starting a VM: region, instance type, image, then Start until Running](/img/screenshots/vscode-tutorial/cloudbank-create-vm-light.gif)
+![Creating and starting a VM: region, instance type, image, then Start until Running](/img/screenshots/vscode-tutorial/cloudbank-create-vm-dark.gif)
+
+**Result:** the card shows the region, instance ID and public IP, `Running`, and **Connect**.
+
+</TabItem>
+
+</Tabs>
+
+## 6. Connect and verify
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **Connect**. A new VS Code window opens through Remote-SSH; its title and status bar read
+`SSH: nexus-<number>`. The first connection installs the VS Code server on the node, in about a minute.
+
+Open a terminal (**Terminal → New Terminal**) and confirm you are inside the job, not on the login node:
+
+```bash
+hostname                 # cpu-int-012, a compute node
+echo $SLURM_JOB_ID       # the Slurm job ID
+echo $SLURM_JOB_NODELIST
+```
+
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/nexus-remote-light.gif)
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/nexus-remote-dark.gif)
+
+The status bar shows the time left and **Stop**. Closing the window leaves the job running; **Connect** reopens it.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **Connect**. A new VS Code window opens through Remote-SSH; its title and status bar read
+`SSH: hpcc-<number>`. The first connection installs the VS Code server on the node, in about a minute.
+
+Open a terminal (**Terminal → New Terminal**) and confirm you are inside the job, not on the login node:
+
+```bash
+hostname                 # cpu-23-1, a compute node
+echo $SLURM_JOB_ID       # the Slurm job ID
+echo $SLURM_JOB_NODELIST
+```
+
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/ttu-remote-light.gif)
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/ttu-remote-dark.gif)
+
+The status bar shows the time left and **Stop**. Closing the window leaves the job running; **Connect** reopens it.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **Connect**. A new VS Code window opens through Remote-SSH; its title and status bar read
+`SSH: delta-<number>`. The first connection installs the VS Code server on the node, in about a minute.
+
+Open a terminal (**Terminal → New Terminal**) and confirm you are inside the job, not on the login node:
+
+```bash
+hostname                 # cn042, a compute node
+echo $SLURM_JOB_ID       # the Slurm job ID
+echo $SLURM_JOB_NODELIST
+```
+
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/delta-remote-light.gif)
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/delta-remote-dark.gif)
+
+The status bar shows the time left and **Stop**. Closing the window leaves the job running; **Connect** reopens it.
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **Connect**. A new VS Code window opens through Remote-SSH; its title and status bar read
+`SSH: bridges2-<number>`. The first connection installs the VS Code server on the node, in about a minute.
+
+Open a terminal (**Terminal → New Terminal**) and confirm you are inside the job, not on the login node:
+
+```bash
+hostname                 # r004, a compute node
+echo $SLURM_JOB_ID       # the Slurm job ID
+echo $SLURM_JOB_NODELIST
+```
+
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/bridges2-remote-light.gif)
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/bridges2-remote-dark.gif)
+
+The status bar shows the time left and **Stop**. Closing the window leaves the job running; **Connect** reopens it.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **Connect**. A new VS Code window opens through Remote-SSH; its title and status bar read
+`SSH: expanse-<number>`. The first connection installs the VS Code server on the node, in about a minute.
+
+Open a terminal (**Terminal → New Terminal**) and confirm you are inside the job, not on the login node:
+
+```bash
+hostname                 # exp-7-59, a compute node
+echo $SLURM_JOB_ID       # the Slurm job ID
+echo $SLURM_JOB_NODELIST
+```
+
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/expanse-remote-light.gif)
+![Clicking Connect, the remote window opening on the compute node, and a terminal running hostname](/img/screenshots/vscode-tutorial/expanse-remote-dark.gif)
+
+The status bar shows the time left and **Stop**. Closing the window leaves the job running; **Connect** reopens it.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Click **Connect**. A new VS Code window opens through Remote-SSH on the VM, as the image's default user
+(`ec2-user` on Amazon Linux, `ubuntu` on Ubuntu). Open a terminal and run `hostname` to confirm you are on the VM.
+
+![The remote window on the VM with a terminal printing its hostname](/img/screenshots/vscode-tutorial/cloudbank-remote-window-light.png)
+![The remote window on the VM with a terminal printing its hostname](/img/screenshots/vscode-tutorial/cloudbank-remote-window-dark.png)
+
+Closing the window does not stop the VM or its billing.
+
+</TabItem>
+
+</Tabs>
+
+## 7. Stop the session
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Click **Stop** in the remote window's status bar or on the card, and confirm. CS Bridge cancels the Slurm job and
+the window becomes a local window. A job that reaches its walltime ends on its own.
+
+**Result:** the session's summary opens with its resources, the walltime used, and Slurm's accounting.
+
+![The session summary for nexus: 2 CPUs, 4 GB, partition cpu-int, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/nexus-summary-light.png)
+![The session summary for nexus: 2 CPUs, 4 GB, partition cpu-int, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/nexus-summary-dark.png)
+
+The session stays in the list; **Start** submits a new job with the same resources.
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+Click **Stop** in the remote window's status bar or on the card, and confirm. CS Bridge cancels the Slurm job and
+the window becomes a local window. A job that reaches its walltime ends on its own.
+
+**Result:** the session's summary opens with its resources, the walltime used, and Slurm's accounting.
+
+![The session summary for hpcc: 2 CPUs, 4 GB, partition nocona, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/ttu-summary-light.png)
+![The session summary for hpcc: 2 CPUs, 4 GB, partition nocona, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/ttu-summary-dark.png)
+
+The session stays in the list; **Start** submits a new job with the same resources.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+Click **Stop** in the remote window's status bar or on the card, and confirm. CS Bridge cancels the Slurm job and
+the window becomes a local window. A job that reaches its walltime ends on its own.
+
+**Result:** the session's summary opens with its resources, the walltime used, and Slurm's accounting.
+
+![The session summary for delta: 2 CPUs, 4 GB, partition cpu-interactive, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/delta-summary-light.png)
+![The session summary for delta: 2 CPUs, 4 GB, partition cpu-interactive, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/delta-summary-dark.png)
+
+The session stays in the list; **Start** submits a new job with the same resources.
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+Click **Stop** in the remote window's status bar or on the card, and confirm. CS Bridge cancels the Slurm job and
+the window becomes a local window. A job that reaches its walltime ends on its own.
+
+**Result:** the session's summary opens with its resources, the walltime used, and Slurm's accounting.
+
+![The session summary for bridges2: 2 CPUs, 4 GB, partition RM-shared, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/bridges2-summary-light.png)
+![The session summary for bridges2: 2 CPUs, 4 GB, partition RM-shared, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/bridges2-summary-dark.png)
+
+The session stays in the list; **Start** submits a new job with the same resources.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+Click **Stop** in the remote window's status bar or on the card, and confirm. CS Bridge cancels the Slurm job and
+the window becomes a local window. A job that reaches its walltime ends on its own.
+
+**Result:** the session's summary opens with its resources, the walltime used, and Slurm's accounting.
+
+![The session summary for expanse: 2 CPUs, 4 GB, partition shared, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/expanse-summary-light.png)
+![The session summary for expanse: 2 CPUs, 4 GB, partition shared, walltime used and Slurm accounting](/img/screenshots/vscode-tutorial/expanse-summary-dark.png)
+
+The session stays in the list; **Start** submits a new job with the same resources.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+Click **Stop** on the card and confirm. The instance stops and keeps its disk; **Start** runs it again. Deleting the
+session (**×**) terminates the instance and its disk.
+
+**Result:** the card shows `Stopped`.
+
+![The aws-us-east-1 session card showing Stopped, with Start and the delete button](/img/screenshots/vscode-tutorial/cloudbank-stopped-light.png)
+![The aws-us-east-1 session card showing Stopped, with Start and the delete button](/img/screenshots/vscode-tutorial/cloudbank-stopped-dark.png)
+
+:::warning
+Signing out of AWS or closing VS Code does not stop a VM. Stop it, or it keeps billing your CloudBank allocation.
+:::
+
+</TabItem>
+
+</Tabs>
+
+## 8. Review past runs
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+**Run History** lists each finished job with its state, elapsed time and efficiency. Click a run to open its summary.
+
+![The Run History view listing the finished nexus run](/img/screenshots/vscode-tutorial/nexus-run-history-light.png)
+![The Run History view listing the finished nexus run](/img/screenshots/vscode-tutorial/nexus-run-history-dark.png)
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+**Run History** lists each finished job with its state, elapsed time and efficiency. Click a run to open its summary.
+
+![The Run History view listing the finished hpcc run](/img/screenshots/vscode-tutorial/ttu-run-history-light.png)
+![The Run History view listing the finished hpcc run](/img/screenshots/vscode-tutorial/ttu-run-history-dark.png)
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+**Run History** lists each finished job with its state, elapsed time and efficiency. Click a run to open its summary.
+
+![The Run History view listing the finished delta run](/img/screenshots/vscode-tutorial/delta-run-history-light.png)
+![The Run History view listing the finished delta run](/img/screenshots/vscode-tutorial/delta-run-history-dark.png)
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+**Run History** lists each finished job with its state, elapsed time and efficiency. Click a run to open its summary.
+
+![The Run History view listing the finished bridges2 run](/img/screenshots/vscode-tutorial/bridges2-run-history-light.png)
+![The Run History view listing the finished bridges2 run](/img/screenshots/vscode-tutorial/bridges2-run-history-dark.png)
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+**Run History** lists each finished job with its state, elapsed time and efficiency. Click a run to open its summary.
+
+![The Run History view listing the finished expanse run](/img/screenshots/vscode-tutorial/expanse-run-history-light.png)
+![The Run History view listing the finished expanse run](/img/screenshots/vscode-tutorial/expanse-run-history-dark.png)
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+VM sessions have no Run History or summary. Cost reports are in CloudBank's portal.
+
+</TabItem>
+
+</Tabs>
+
+## Get help
+
+For CS Bridge itself, see [Troubleshooting](./troubleshooting.md). For accounts, allocations, passwords and MFA,
+contact the team that runs your cluster or cloud account:
+
+<Tabs groupId="site" queryString="site">
+
+<TabItem value="nexus" label="Nexus" default>
+
+Nexus: [nexus-support@gatech.edu](mailto:nexus-support@gatech.edu).
+
+</TabItem>
+
+<TabItem value="ttu" label="TTU HPCC">
+
+TTU HPCC: [hpccsupport@ttu.edu](mailto:hpccsupport@ttu.edu), 806-742-4350.
+
+</TabItem>
+
+<TabItem value="delta" label="NCSA Delta">
+
+NCSA: [help.ncsa.illinois.edu](https://help.ncsa.illinois.edu) or [help@ncsa.illinois.edu](mailto:help@ncsa.illinois.edu); start the subject with "Delta".
+
+</TabItem>
+
+<TabItem value="bridges2" label="PSC Bridges-2">
+
+PSC: [help@psc.edu](mailto:help@psc.edu), 412-268-4960.
+
+</TabItem>
+
+<TabItem value="expanse" label="SDSC Expanse">
+
+SDSC: [consult@sdsc.edu](mailto:consult@sdsc.edu), or the ACCESS Help Desk.
+
+</TabItem>
+
+<TabItem value="cloudbank" label="CloudBank (AWS)">
+
+CloudBank: [help@cloudbank.org](mailto:help@cloudbank.org) or [community.cloudbank.org](https://community.cloudbank.org).
+
+</TabItem>
+
+</Tabs>
