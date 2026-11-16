@@ -132,7 +132,7 @@ last 20 usage samples, one every five seconds, read from Linkspan on the node.
 | `connected` | &lt;time&gt; left | **Stop**, and one of **Current** (this window, disabled), **Switch** (another window has it open), **Opening…** or **Connect** |
 | `unreachable` | Unreachable: &lt;message&gt;, or Compute host unreachable — retrying… | **Stop**, **Reconnect** |
 | `stopping` | Stopping… | None |
-| `stopped` | Stopped, or Stop failed: &lt;message&gt; when the record holds an error message | **Start**, delete |
+| `stopped` | Stopped | **Start**, delete |
 | `failed` | Failed: &lt;message&gt; | **Start**, delete |
 
 | Action | Does |
@@ -147,8 +147,8 @@ last 20 usage samples, one every five seconds, read from Linkspan on the node.
 Preparing a Dev Tunnel signs in to Microsoft if needed and creates the run's tunnel. The preview offers **Close**, which
 releases the prepared run, and **Submit Job**. **Stop** keeps the record for the next **Start**.
 
-**Opening…** holds until the new window registers itself, for at most 60 seconds. A **Connect** after the walltime
-sets `stopped` and shows `This session was stopped at its walltime limit. Start it again for a new run.`
+**Opening…** holds until the new window registers itself, for at most 60 seconds. A session whose walltime passed
+is `stopped`, so it offers no **Connect**.
 
 ## Remote window
 
