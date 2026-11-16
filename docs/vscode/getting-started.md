@@ -8,7 +8,8 @@ description: Install CS Bridge, add a cluster, and open your first VS Code windo
 
 This tutorial takes you from installing CS Bridge to a VS Code window on a Slurm compute node, and back to a stopped
 job; a first run costs a few minutes of 2 CPUs. Before you start, meet the [requirements](./index.md#requirements),
-including a Remote-SSH extension.
+including a Remote-SSH extension. The [VS Code tutorial](./tutorial.mdx) walks through the same steps for Nexus,
+TTU HPCC, NCSA Delta, PSC Bridges-2, SDSC Expanse and CloudBank, with screenshots for each.
 
 ## 1. Install
 
@@ -17,14 +18,14 @@ Install **CS Bridge** from the
 for `CS Bridge` in the Extensions view.
 
 **Result:** a **CS Bridge** icon appears in the activity bar. It opens three views: **Sessions**, **Run History** and
-**SSH Hosts**.
+**Compute Hosts**.
 
 ## 2. Add a cluster
 
 CS Bridge reaches a cluster through a `Host` entry in `~/.ssh/config`. If the cluster is already listed under
-**SSH Hosts**, skip this step.
+**Compute Hosts**, skip this step.
 
-Otherwise, click `+` in the Sessions view (**CS Bridge: Open Menu**) → **Add SSH Host**, paste the command you use to
+Otherwise, click `+` in the Sessions view (**CS Bridge: Open Menu**) → **Add Compute Host**, paste the command you use to
 log in, and press Enter:
 
 ```bash
@@ -33,14 +34,13 @@ ssh jdoe@login.delta.ncsa.illinois.edu
 
 Accept the proposed **alias** or type a shorter one such as `delta`.
 
-**Result:** a notification reads `Added SSH host <alias>.`, and the host appears under **SSH Hosts**. `ssh <alias>`
-also works in a terminal.
+**Result:** the host appears under **Compute Hosts**. `ssh <alias>` also works in a terminal.
 
 ## 3. Create a session
 
 A **session** is a saved set of resources on one cluster. Each time you start it, CS Bridge submits a new Slurm job.
 
-Click **Open Menu** → **Create New SSH Session** → the cluster. A card shows `Fetching runtime details…` while
+Click **Open Menu** → **Create New Session** → the cluster. A card shows `Fetching runtime details…` while
 CS Bridge reads your Slurm accounts and the cluster's partitions.
 
 Password and MFA prompts appear in an **SSH Authentication** panel inside VS Code: type the answer and press Enter.
@@ -62,7 +62,6 @@ The card then shows a form. For a first session, keep the defaults and choose on
 | CPUs | 2 (default) up to the partition's per-node count |
 | Memory | 4 (default), 8, 16, 32 … GB, up to the partition's memory |
 | GPUs, GPU Type | GPU tab only |
-| Walltime | 30 minutes (default), 1, 2, 4, 8, 12 or 24 hours; cannot be extended |
 
 Click **Add**. While the button shows `Validating…`, CS Bridge asks Slurm whether it would accept the job, without
 queueing anything.
@@ -72,7 +71,8 @@ queueing anything.
 
 ## 4. Start and connect
 
-1. Click **Start**. Sign in to Microsoft if VS Code asks. CS Bridge shows the **Slurm Job Script Preview**, the exact
+1. Click **Start** and choose a walltime: 30 minutes, 1, 2, 4, 8, 12 or 24 hours; it cannot be extended. Sign in to
+   Microsoft if VS Code asks. CS Bridge shows the **Slurm Job Script Preview**, the exact
    script it will submit under your user.
 
    ![The Slurm Job Script Preview for SSH host delta, with Close and Submit Job](/img/screenshots/vscode-job-script-light.png)

@@ -11,7 +11,7 @@ const sidebars: SidebarsConfig = {
   overview: tab('overview', ['index', 'how-it-works', 'architecture', 'roadmap', 'glossary', 'project-and-funding']),
   vscode: tab(
     'vscode',
-    ['index', 'getting-started', 'sessions-and-runs', 'troubleshooting'],
+    ['index', 'getting-started', 'tutorial', 'sessions-and-runs', 'troubleshooting'],
     ['user-interface', 'error-messages', 'architecture', 'development'],
   ),
   jupyter: tab(

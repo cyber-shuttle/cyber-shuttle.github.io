@@ -5,8 +5,8 @@
 //   :status[available|development|planned]
 // Headings inside a block get an id prefixed r-, p- or a- so the page outline can follow the same switches.
 // A table cell holding a short phrase is marked `nowrap`, so its column is never squeezed below the phrase;
-// only long inline code in a cell may break mid-token. Screenshots are captured at 2x and shown at half their pixel size;
-// `-light` and `-dark` variants follow the colour mode.
+// only long inline code in a cell may break mid-token. PNG screenshots are captured at 2x and shown at half their pixel
+// size, GIF recordings at their own; `-light` and `-dark` variants follow the colour mode.
 const {slug} = require('github-slugger');
 const {readFileSync} = require('node:fs');
 const path = require('node:path');
@@ -30,9 +30,12 @@ function mark(node, prefix) {
       if (text(child).length <= 32) child.data = {...child.data, hProperties: {...child.data?.hProperties, className: ['nowrap']}};
       for (const code of child.children) if (code.type === 'inlineCode' && code.value.length > 30) code.data = {hProperties: {className: ['long']}};
     } else if (child.type === 'image' && child.url.startsWith('/img/screenshots/')) {
-      const png = readFileSync(path.join(__dirname, '..', 'static', child.url));
-      const theme = child.url.match(/-(light|dark)\.png$/)?.[1];
-      const attrs = {src: child.url, alt: child.alt, width: String(png.readUInt32BE(16) / 2), height: String(png.readUInt32BE(20) / 2), loading: 'lazy', className: `screenshot${theme ? ` screenshot--${theme}` : ''}`};
+      const image = readFileSync(path.join(__dirname, '..', 'static', child.url));
+      const theme = child.url.match(/-(light|dark)\.(png|gif)$/)?.[1];
+      const [width, height] = child.url.endsWith('.gif')
+        ? [image.readUInt16LE(6), image.readUInt16LE(8)]
+        : [image.readUInt32BE(16) / 2, image.readUInt32BE(20) / 2];
+      const attrs = {src: child.url, alt: child.alt, width: String(width), height: String(height), loading: 'lazy', className: `screenshot${theme ? ` screenshot--${theme}` : ''}`};
       Object.assign(child, {type: 'mdxJsxTextElement', name: 'img', children: [], attributes: Object.entries(attrs).map(([name, value]) => ({type: 'mdxJsxAttribute', name, value}))});
     } else if (child.type === 'heading' && prefix) {
       child.data = {...child.data, hProperties: {...child.data?.hProperties, id: prefix + slug(text(child))}};
