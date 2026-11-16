@@ -45,16 +45,16 @@ None of these touches a job, and the host entry or session record is left as it 
 
 | Message | Cause |
 |---|---|
-| `CS Bridge: Missing hostname in SSH connection string` | The **Add SSH Host** command has no destination |
+| `CS Bridge: Missing hostname in SSH connection string` | The **Add Compute Host** command has no destination |
 | `CS Bridge: Unknown flag <c>` | A flag outside Remote-SSH's `ssh` option grammar |
 | `CS Bridge: Expected flag -<c> to have an argument but it did not` | A flag such as `-p` or `-i` ends the command |
 | `CS Bridge: Argument missing for option <arg>` | `-o` without `Key=Value` |
 | `CS Bridge: LocalForward needs a listener and a destination separated by a colon. <arg> does not match.` | `-L` without `listener:destination` |
 | `CS Bridge: SSH <alias\|hostname\|username> cannot begin with -` | A value that `ssh` would read as an option |
 | `CS Bridge: SSH <alias\|hostname\|username> cannot include the character <c>` | A backslash, quote, backtick, `!`, `%`, space, CR or LF |
-| `CS Bridge: SSH host <alias> is not in ~/.ssh/config.` | **Edit** on a host that `~/.ssh/config` itself no longer defines |
-| `CS Bridge: SSH host <alias> already exists.` | **Edit** renames the host to an alias another entry has |
-| `Failed to delete SSH host <alias>: <message>` | `~/.ssh/config` could not be rewritten |
+| `CS Bridge: Compute host <alias> is not in ~/.ssh/config.` | **Edit** on a host that `~/.ssh/config` itself no longer defines |
+| `CS Bridge: Compute host <alias> already exists.` | **Edit** renames the host to an alias another entry has |
+| `Failed to delete compute host <alias>: <message>` | `~/.ssh/config` could not be rewritten |
 | `Failed to query associations (exit <n>): <stderr>` | `sacctmgr` failed, or the SSH connection did (exit 255) |
 | `SSH connection to <alias> closed (exit <n>)` | Authentication failed, the prompt was dismissed, or the host refused the connection; appears inside other messages |
 | `Slurm on SSH host <alias> rejected the session configuration: <stderr>` | `sbatch --test-only` or the site's submit filter refused the job; shown in the `Session validation failed` overlay |
@@ -92,7 +92,7 @@ remove it with `scancel`.
 |---|---|
 | `Slurm is not available on SSH host <alias>: <stderr>` | `sinfo` exited non-zero |
 | `Failed to detect remote architecture: <stderr>` | `uname -m` failed |
-| `SSH host <alias> reports architecture <machine>, which Linkspan is not released for` | `uname -m` is not `x86_64`, `aarch64` or `arm64` |
+| `Compute host <alias> reports architecture <machine>, which Linkspan is not released for` | `uname -m` is not `x86_64`, `aarch64` or `arm64` |
 | `Failed to install Linkspan on SSH host <alias>: <stderr>` | The download from `github.com` or the unpack failed, or produced an empty file |
 | `Job submission failed: <stderr>` | `sbatch` exited non-zero |
 | `Failed to parse job ID from sbatch output: <output>` | `sbatch` printed no `Submitted batch job <id>` line |
@@ -107,7 +107,7 @@ the job may still be running.
 |---|---|
 | `Failed: Job ended with status: failed` | `sacct` reported `FAILED`, `BOOT_FAIL`, `DEADLINE`, `NODE_FAIL`, `PREEMPTED`, `REVOKED` or `SPECIAL_EXIT` |
 | `Failed: Job ended with status: out_of_memory` | `sacct` reported `OUT_OF_MEMORY` |
-| `Unreachable: SSH host unreachable: <message>` | A background `sacct` poll could not run over SSH |
+| `Unreachable: Compute host unreachable: <message>` | A background `sacct` poll could not run over SSH |
 
 Background polls use `BatchMode=yes`, so they fail while the host needs a password or MFA; the next successful poll
 restores the status. A user action on that host, such as the draft card's **Refresh Slurm details**, raises the prompt

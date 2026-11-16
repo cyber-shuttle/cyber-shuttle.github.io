@@ -37,15 +37,15 @@ A missing job log means the job never started running. Check it with `squeue -u 
 | Microsoft sign-in fails | The local network blocks `login.microsoftonline.com` or `*.devtunnels.ms` | Try another network, or ask your IT group |
 | `No ptyHost heartbeat`, or the remote window crashes | The job hit its memory limit, which killed the VS Code server | Start a session with more memory |
 | The remote window disconnects | The Dev Tunnel connection dropped | Wait about a minute; if the card returns to **Connect**, click it |
-| The card shows **Unreachable** | A status check or the connection to the node failed | Wait for the next check, or click **Reconnect**. For `SSH host unreachable`, see below |
+| The card shows **Unreachable** | A status check or the connection to the node failed | Wait for the next check, or click **Reconnect**. For `Compute host unreachable`, see below |
 | MFA is requested again | The shared SSH connection to the login node closed | Expected; answer in the **SSH Authentication** panel |
 | Extensions missing in each new job | The VS Code server is installed afresh for each job | List them in the VS Code setting `remote.SSH.defaultExtensions` |
 | Dev Containers errors in the remote window | The extension needs a container runtime the cluster lacks | Disable Dev Containers in that window |
 | Slow file transfer | Traffic goes through Microsoft's relay | Use `scp`, `rsync` or Globus through the login node or a data transfer node |
 
-`SSH host unreachable` means a background status check could not log in, because it never shows a login prompt. To log
+`Compute host unreachable` means a background status check could not log in, because it never shows a login prompt. To log
 in again, click **Open Menu** →
-**Create New SSH Session** → the cluster. If the form appears without a prompt, click the draft card's refresh icon
+**Create New Session** → the cluster. If the form appears without a prompt, click the draft card's refresh icon
 (**Refresh Slurm details**). Answer the prompt and close the form; the card recovers at the next check.
 
 ## Questions
