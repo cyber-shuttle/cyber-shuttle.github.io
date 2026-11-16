@@ -20,7 +20,7 @@ The **CS Bridge** activity-bar container holds three webview views. The ID is fo
 |---|---|---|---|
 | Sessions | `csbridge.sessionsView` | Always; in a [remote window](#remote-window), only that window's session | **+** (Open Menu), local windows only |
 | Run History | `csbridge.statsView` | Local windows only | Refresh Run History, Clear Run History |
-| SSH Hosts | `csbridge.hostsView` | Local windows only | Refresh SSH Hosts, **+** (Add SSH Host) |
+| Compute Hosts | `csbridge.hostsView` | Local windows only | Refresh Compute Hosts, **+** (Add Compute Host) |
 
 The Sessions view description shows the signed-in Microsoft account, or `Not Signed In`.
 
@@ -31,8 +31,8 @@ returns one page. Items marked **(experimental)** appear only with `csbridge.exp
 
 | Item | Does |
 |---|---|
-| Create New SSH Session | Lists SSH hosts, then opens a draft form for the chosen one |
-| Add SSH Host | Adds a host from an `ssh` command |
+| Create New Session | Lists compute hosts, then opens a draft form for the chosen one |
+| Add Compute Host | Adds a host from an `ssh` command |
 | Default Transport **(experimental)** | Writes `csbridge.transport` at global scope |
 | `Sign In to CyberShuttle`, `Sign Out of CyberShuttle` **(experimental)** | CILogon device sign-in through Airavata |
 | Sign In to Microsoft DevTunnel, Sign Out of Microsoft DevTunnel | VS Code's `microsoft` authentication provider |
@@ -40,8 +40,8 @@ returns one page. Items marked **(experimental)** appear only with `csbridge.exp
 Default Transport offers Microsoft DevTunnel and Cybershuttle Link ([Transports](./architecture.md#transports)).
 Signing out of Microsoft DevTunnel signs the account out of VS Code as a whole.
 
-**Add SSH Host** takes two pages: an `ssh` command, for example `ssh hello@microsoft.com -A`, then the alias,
-pre-filled with the host name. It confirms with `Added SSH host <alias>.` and writes the entry at the top of
+**Add Compute Host** takes two pages: an `ssh` command, for example `ssh hello@microsoft.com -A`, then the alias,
+pre-filled with the host name. It confirms with `Added compute host <alias>.` and writes the entry at the top of
 `~/.ssh/config`, after any `Include` lines, replacing an entry with the same alias.
 
 The parser (`src/modules/sshCommandParser.ts`) uses Remote-SSH 0.123.0's option grammar:
@@ -55,7 +55,7 @@ The parser (`src/modules/sshCommandParser.ts`) uses Remote-SSH 0.123.0's option 
 The alias, host name and user may not start with `-` or contain a backslash, a single or double quote, a backtick,
 `!`, `%`, a space, CR or LF.
 
-## SSH Hosts view
+## Compute Hosts view
 
 Hosts come from `~/.ssh/config` merged with the system file (`/etc/ssh/ssh_config`, or
 `%ALLUSERSPROFILE%\ssh\ssh_config` on Windows). The user's file wins on a duplicate alias; wildcard hosts (`*`, `?`)
@@ -63,26 +63,26 @@ and `Match` blocks are skipped. An icon marks the source. Each row expands to sh
 other directive).
 
 CS Bridge reaches a host by running the system `ssh <alias>`, so every directive of the entry applies. To change how
-CS Bridge logs in to a cluster, edit the host's entry in `~/.ssh/config` and click **Refresh SSH Hosts**.
+CS Bridge logs in to a cluster, edit the host's entry in `~/.ssh/config` and click **Refresh Compute Hosts**.
 
 | Button | Available on | Does |
 |---|---|---|
 | Terminal | Every host | Integrated terminal running `ssh <alias>` over the host's shared ControlMaster connection |
-| Edit | Hosts from `~/.ssh/config` | Menu page **Edit SSH Host**: the alias, then `[user@]hostname`. Rewrites `Host`, `User` and `HostName` in place and keeps other directives; confirms `Updated SSH host <alias>.` |
-| Delete | Hosts from `~/.ssh/config` | Asks `Delete SSH host '<alias>'?` (`This deletes it from ~/.ssh/config.`), then removes the entry |
+| Edit | Hosts from `~/.ssh/config` | Menu page **Edit Compute Host**: the alias, then `[user@]hostname`. Rewrites `Host`, `User` and `HostName` in place and keeps other directives; confirms `Updated compute host <alias>.` |
+| Delete | Hosts from `~/.ssh/config` | Asks `Delete compute host '<alias>'?` (`This deletes it from ~/.ssh/config.`), then removes the entry |
 
 ![The SSH Hosts view with delta expanded to show its username, hostname and arguments, and the Terminal, Edit and Delete actions](/img/screenshots/vscode-ssh-hosts-light.png)
 ![The SSH Hosts view with delta expanded to show its username, hostname and arguments, and the Terminal, Edit and Delete actions](/img/screenshots/vscode-ssh-hosts-dark.png)
 
 ## Session form
 
-**Create New SSH Session** opens a draft card that shows `Fetching runtime details…` while CS Bridge reads the host.
+**Create New Session** opens a draft card that shows `Fetching runtime details…` while CS Bridge reads the host.
 SSH prompts appear in the **SSH Authentication — &lt;alias&gt;** panel. A failure shows the error and **Retry**. The
 card's refresh icon (**Refresh Slurm details**) re-reads the host; its close icon discards the draft. A window reads
 each host once and reuses the result for later drafts until that refresh.
 
-Every choice except the walltime comes from the cluster. When a choice is missing, run the command in the Source column
-by hand.
+Every choice comes from the cluster; the walltime is chosen on **Start**. When a choice is missing, run the command in
+the Source column by hand.
 
 | Field | Choices | Source |
 |---|---|---|
@@ -92,15 +92,14 @@ by hand.
 | CPUs | 2 up to the partition's CPU count | `sinfo` `%c` |
 | Memory | 4, 8, 16, 32, 64, 128, 256, 512, 1024 GB, up to the partition's memory (`191000+` reads as 191000 MB); 4 to 128 GB when `sinfo` reports no number or `0` | `sinfo` `%m` |
 | GPUs, GPU Type | GPU tab only; 1 up to the partition's count of the chosen type | `sinfo` `%G` |
-| Walltime | 30 min (default), 1, 2, 4, 8, 12 or 24 hours | Fixed |
 
 The account mapping exists because Slurm's database lowercases account names and TACC's submit filter expects the
 spelling in `project.map`. The floors of 2 CPUs and 4 GB exist because a smaller job starves the VS Code server; a
 2 GB job was observed to be killed on Delta (`src/ui/logic/cluster.ts`).
 
-**Add** pipes the job script to `sbatch --test-only`, which runs the site's submit filter and queues nothing. The
-session is saved as `not_started` only if Slurm accepts it. Otherwise an overlay titled `Session validation failed`
-shows Slurm's message and **Dismiss**, and the draft stays open. Sessions cannot be edited.
+**Add** pipes the job script, with a 30-minute walltime, to `sbatch --test-only`, which runs the site's submit filter
+and queues nothing. The session is saved as `not_started` only if Slurm accepts it. Otherwise an overlay titled
+`Session validation failed` shows Slurm's message and **Dismiss**, and the draft stays open. Sessions cannot be edited.
 
 ![The Session validation failed overlay on a draft card, showing Slurm's refusal of an invalid account and partition combination, with Dismiss](/img/screenshots/vscode-validation-failed-light.png)
 ![The Session validation failed overlay on a draft card, showing Slurm's refusal of an invalid account and partition combination, with Dismiss](/img/screenshots/vscode-validation-failed-dark.png)
@@ -109,7 +108,7 @@ shows Slurm's message and **Dismiss**, and the draft stays open. Sessions cannot
 
 A card shows, in order:
 
-- a status icon, the SSH host alias, Slurm account and partition chips, and a delete icon when the session is deletable;
+- a status icon, the compute host alias, Slurm account and partition chips, and a delete icon when the session is deletable;
 - the memory, CPUs and GPUs requested;
 - a walltime chip, the status text and the actions.
 
@@ -131,14 +130,14 @@ last 20 usage samples, one every five seconds, read from Linkspan on the node.
 | `ready_to_connect` | &lt;time&gt; left | **Stop**, **Connect** |
 | `connecting` | Connecting… | **Stop**, **Connecting…** (disabled) |
 | `connected` | &lt;time&gt; left | **Stop**, and one of **Current** (this window, disabled), **Switch** (another window has it open), **Opening…** or **Connect** |
-| `unreachable` | Unreachable: &lt;message&gt;, or SSH host unreachable — retrying… | **Stop**, **Reconnect** |
+| `unreachable` | Unreachable: &lt;message&gt;, or Compute host unreachable — retrying… | **Stop**, **Reconnect** |
 | `stopping` | Stopping… | None |
-| `stopped` | Stopped, or Stop failed: &lt;message&gt; when the record holds an error message | **Start**, delete |
+| `stopped` | Stopped | **Start**, delete |
 | `failed` | Failed: &lt;message&gt; | **Start**, delete |
 
 | Action | Does |
 |---|---|
-| Start | Releases the previous run, prepares the transport, shows the **Slurm Job Script Preview** |
+| Start | Asks for a walltime (30 min, 1, 2, 4, 8, 12 or 24 h; the last pick preselected), releases the previous run, prepares the transport, shows the **Slurm Job Script Preview** |
 | Submit Job | Sets `submitting`, runs `sinfo`, installs or updates Linkspan, runs `sbatch`, sets `queued` |
 | Connect, Reconnect | Ensures Linkspan's SSH server, binds the local forward, writes the per-session SSH host, opens or focuses the window |
 | Switch | Focuses the window already open on the session |
@@ -148,14 +147,14 @@ last 20 usage samples, one every five seconds, read from Linkspan on the node.
 Preparing a Dev Tunnel signs in to Microsoft if needed and creates the run's tunnel. The preview offers **Close**, which
 releases the prepared run, and **Submit Job**. **Stop** keeps the record for the next **Start**.
 
-**Opening…** holds until the new window registers itself, for at most 60 seconds. A **Connect** after the walltime
-sets `stopped` and shows `This session was stopped at its walltime limit. Start it again for a new run.`
+**Opening…** holds until the new window registers itself, for at most 60 seconds. A session whose walltime passed
+is `stopped`, so it offers no **Connect**.
 
 ## Remote window
 
 A window whose authority is `ssh-remote+<per-session alias>` is a **remote window** for that session. In it, the
 context key `csbridge.remote` is true, the Sessions view shows only that session with **Stop** as its only action, and
-Run History and SSH Hosts are hidden.
+Run History and Compute Hosts are hidden.
 
 | Status bar item | ID | Does |
 |---|---|---|
@@ -175,7 +174,7 @@ stall there makes the server miss its heartbeat, and all of one user's sessions 
 
 ## Run History and summaries
 
-Run History groups finished runs by session, headed by SSH host, Slurm account, partition and run count. Each row
+Run History groups finished runs by session, headed by compute host, Slurm account, partition and run count. Each row
 shows the end time, the final status and two efficiency chips from `sacct`. Both read usage from the job's `.batch`
 step, where the session's work runs; the `.extern` step and CS Bridge's own `srun` polls report near-zero use.
 
@@ -217,11 +216,11 @@ All commands are in the **CS Bridge** category.
 | Command | Title | Where | Command Palette |
 |---|---|---|---|
 | `csbridge.menu` | Open Menu | Sessions title bar **+**, local windows | Local windows |
-| `csbridge.addHost` | Add SSH Host | SSH Hosts title bar **+**; opens the menu at **Add SSH Host** | No |
-| `csbridge.refreshHosts` | Refresh SSH Hosts | SSH Hosts title bar | No |
+| `csbridge.addHost` | Add Compute Host | Compute Hosts title bar **+**; opens the menu at **Add Compute Host** | No |
+| `csbridge.refreshHosts` | Refresh Compute Hosts | Compute Hosts title bar | No |
 | `csbridge.refreshStats` | Refresh Run History | Run History title bar | No |
 | `csbridge.clearRunHistory` | Clear Run History | Run History title bar | No |
-| `csbridge.editHost` | None | SSH Hosts row **Edit**; opens the menu at **Edit SSH Host** | No |
+| `csbridge.editHost` | None | Compute Hosts row **Edit**; opens the menu at **Edit Compute Host** | No |
 | `csbridge.stopRemoteSession` | None | Remote window status bar **Stop** and the remote Sessions card | No |
 
 `csbridge.editHost` and `csbridge.stopRemoteSession` are registered at runtime, not in `package.json`; the latter in
@@ -239,7 +238,7 @@ The extension sets two context keys:
 
 | Key | True when |
 |---|---|
-| `csbridge.remote` | The window is a CS Bridge remote window; hides Run History, SSH Hosts and the Sessions **+** |
+| `csbridge.remote` | The window is a CS Bridge remote window; hides Run History, Compute Hosts and the Sessions **+** |
 | `csbridge.menuNested` | The menu shows a page below its first |
 
 ## Files written
@@ -259,7 +258,7 @@ text it wrote.
 | Extension global storage `ssh_keys/` | `id_cshost-<id>`, a per-session ed25519 private key, no passphrase; the public half is derived on demand |
 | `csbridge-ssh/` in `$XDG_RUNTIME_DIR` or the temp folder | ControlMaster sockets (not on Windows); a new `csbridge-*` temp folder instead when that one is not private to the user |
 | `<file>.lock`, `<file>.tmp` beside `ssh_config` and `~/.ssh/config`; `migrate.lock` in extension global storage | Cross-window lock holding a PID, and the atomic-write temporary |
-| `~/.ssh/config` | The `Include` line, and hosts added through **Add SSH Host** or changed through **Edit** |
+| `~/.ssh/config` | The `Include` line, and hosts added through **Add Compute Host** or changed through **Edit** |
 | VS Code user setting `remote.SSH.serverInstallPath` | Per-session alias → `/tmp/cs-vscode/<id>`; removed with the per-session SSH host on **Stop**, when a run ends as `stopped`, and on **Delete** |
 | VS Code user setting `csbridge.transport` | Written by **Default Transport** |
 | OS keychain, through VS Code | The Microsoft account session |
